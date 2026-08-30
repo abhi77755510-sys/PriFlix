@@ -6,44 +6,52 @@ import { NetflixLandscapeRail } from "@/components/media/MediaRail/NetflixLandsc
 interface PrimeViewProps {
     tmdb: TMDB
     mediaType: "all" | "movie" | "tv"
+    selectedLang?: string
 }
 
-export function PrimeView({ tmdb, mediaType }: PrimeViewProps) {
+export function PrimeView({ tmdb, mediaType, selectedLang = "all" }: PrimeViewProps) {
     // ── Dedicated Prime Video Fetchers ─────────────────────────────────────────
-    const fetchPvTop10Tv = useCallback(
-        () => tmdb.discover.tv({ with_watch_providers: "9|119", watch_region: "IN", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchPvTop10Tv = useCallback(() => {
+        const params: any = { with_watch_providers: "9|119", watch_region: "IN", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.tv(params)
+    }, [tmdb, selectedLang])
 
-    const fetchPvTop10Movies = useCallback(
-        () => tmdb.discover.movie({ with_watch_providers: "9|119", watch_region: "IN", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchPvTop10Movies = useCallback(() => {
+        const params: any = { with_watch_providers: "9|119", watch_region: "IN", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.movie(params)
+    }, [tmdb, selectedLang])
 
-    const fetchPvOriginals = useCallback(
-        () => tmdb.discover.tv({ with_networks: "1024", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchPvOriginals = useCallback(() => {
+        const params: any = { with_networks: "1024", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.tv(params)
+    }, [tmdb, selectedLang])
 
-    const fetchPvAction = useCallback(
-        () => tmdb.discover.movie({ with_watch_providers: "9|119", watch_region: "IN", with_genres: "28,12", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchPvMalayalam = useCallback(() => {
+        return tmdb.discover.movie({ with_watch_providers: "9|119", watch_region: "IN", with_original_language: "ml", sort_by: "popularity.desc" })
+    }, [tmdb])
 
-    const fetchPvCrime = useCallback(
-        () => tmdb.discover.tv({ with_watch_providers: "9|119", watch_region: "IN", with_genres: "80,9648", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchPvTamil = useCallback(() => {
+        return tmdb.discover.movie({ with_watch_providers: "9|119", watch_region: "IN", with_original_language: "ta", sort_by: "popularity.desc" })
+    }, [tmdb])
 
-    const fetchPvRomance = useCallback(
-        () => tmdb.discover.movie({ with_watch_providers: "9|119", watch_region: "IN", with_genres: "10749", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchPvTelugu = useCallback(() => {
+        return tmdb.discover.movie({ with_watch_providers: "9|119", watch_region: "IN", with_original_language: "te", sort_by: "popularity.desc" })
+    }, [tmdb])
 
-    const fetchPvComedy = useCallback(
-        () => tmdb.discover.movie({ with_watch_providers: "9|119", watch_region: "IN", with_genres: "35", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchPvAction = useCallback(() => {
+        const params: any = { with_watch_providers: "9|119", watch_region: "IN", with_genres: "28,12", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.movie(params)
+    }, [tmdb, selectedLang])
+
+    const fetchPvCrime = useCallback(() => {
+        const params: any = { with_watch_providers: "9|119", watch_region: "IN", with_genres: "80,9648", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.tv(params)
+    }, [tmdb, selectedLang])
 
     return (
         <div className="space-y-10 px-4 sm:px-8 pt-4 animate-in duration-500 fade-in bg-black">
@@ -77,6 +85,30 @@ export function PrimeView({ tmdb, mediaType }: PrimeViewProps) {
                 />
             )}
 
+            {/* Regional Cinema on Prime */}
+            {selectedLang === "all" && (
+                <>
+                    <NetflixLandscapeRail
+                        title="Top Malayalam Hits on Prime"
+                        fetcher={fetchPvMalayalam}
+                        type="movie"
+                        badgeType="Recently added"
+                    />
+                    <NetflixLandscapeRail
+                        title="Top Tamil Blockbusters on Prime"
+                        fetcher={fetchPvTamil}
+                        type="movie"
+                        badgeType="Recently added"
+                    />
+                    <NetflixLandscapeRail
+                        title="Top Telugu Hits on Prime"
+                        fetcher={fetchPvTelugu}
+                        type="movie"
+                        badgeType="Recently added"
+                    />
+                </>
+            )}
+
             {/* Action & Adventure Movies */}
             {(mediaType === "all" || mediaType === "movie") && (
                 <NetflixLandscapeRail
@@ -93,24 +125,6 @@ export function PrimeView({ tmdb, mediaType }: PrimeViewProps) {
                     title="Crime & Mystery Series"
                     fetcher={fetchPvCrime}
                     type="tv"
-                />
-            )}
-
-            {/* Romance Movies on Prime */}
-            {(mediaType === "all" || mediaType === "movie") && (
-                <NetflixLandscapeRail
-                    title="Romance Movies on Prime"
-                    fetcher={fetchPvRomance}
-                    type="movie"
-                />
-            )}
-
-            {/* Comedy Movies on Prime */}
-            {(mediaType === "all" || mediaType === "movie") && (
-                <NetflixLandscapeRail
-                    title="Comedy Hits on Prime"
-                    fetcher={fetchPvComedy}
-                    type="movie"
                 />
             )}
         </div>

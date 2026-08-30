@@ -7,74 +7,80 @@ import { NetflixLandscapeRail } from "@/components/media/MediaRail/NetflixLandsc
 interface NetflixViewProps {
     tmdb: TMDB
     mediaType: "all" | "movie" | "tv"
+    selectedLang?: string
 }
 
-export function NetflixView({ tmdb, mediaType }: NetflixViewProps) {
+export function NetflixView({ tmdb, mediaType, selectedLang = "all" }: NetflixViewProps) {
     // ── 1. Top 10 Series in Netflix Today ──────────────────────────────────────
-    const fetchTop10Series = useCallback(
-        () => tmdb.discover.tv({ with_watch_providers: "8", watch_region: "IN", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchTop10Series = useCallback(() => {
+        const params: any = { with_watch_providers: "8", watch_region: "IN", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.tv(params)
+    }, [tmdb, selectedLang])
 
     // ── 2. Top 10 Movies in Netflix Today ──────────────────────────────────────
-    const fetchTop10Movies = useCallback(
-        () => tmdb.discover.movie({ with_watch_providers: "8", watch_region: "IN", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchTop10Movies = useCallback(() => {
+        const params: any = { with_watch_providers: "8", watch_region: "IN", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.movie(params)
+    }, [tmdb, selectedLang])
 
     // ── 3. Only on Netflix (Netflix Network Originals) ─────────────────────────
-    const fetchOnlyOnNetflix = useCallback(
-        () => tmdb.discover.tv({ with_networks: "213", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchOnlyOnNetflix = useCallback(() => {
+        const params: any = { with_networks: "213", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.tv(params)
+    }, [tmdb, selectedLang])
 
     // ── 4. TV Thrillers & Mysteries ────────────────────────────────────────────
-    const fetchTvThrillers = useCallback(
-        () => tmdb.discover.tv({ with_watch_providers: "8", watch_region: "IN", with_genres: "9648,80", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchTvThrillers = useCallback(() => {
+        const params: any = { with_watch_providers: "8", watch_region: "IN", with_genres: "9648,80", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.tv(params)
+    }, [tmdb, selectedLang])
 
     // ── 5. Binge-worthy US TV Action & Adventure ───────────────────────────────
-    const fetchBingeAction = useCallback(
-        () => tmdb.discover.tv({ with_watch_providers: "8", watch_region: "IN", with_genres: "10759", with_origin_country: "US", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchBingeAction = useCallback(() => {
+        const params: any = { with_watch_providers: "8", watch_region: "IN", with_genres: "10759", with_origin_country: "US", sort_by: "popularity.desc" }
+        return tmdb.discover.tv(params)
+    }, [tmdb])
 
-    // ── 6. New on Netflix (Recent Releases) ────────────────────────────────────
-    const fetchNewOnNetflix = useCallback(
-        () => tmdb.discover.movie({ with_watch_providers: "8", watch_region: "IN", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    // ── 6. New on Netflix (Latest Additions) ───────────────────────────────────
+    const fetchNewOnNetflix = useCallback(() => {
+        const params: any = { with_watch_providers: "8", watch_region: "IN", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.movie(params)
+    }, [tmdb, selectedLang])
 
     // ── 7. Series set in India (Netflix India Originals) ───────────────────────
-    const fetchIndiaSeries = useCallback(
-        () => tmdb.discover.tv({ with_watch_providers: "8", watch_region: "IN", with_origin_country: "IN", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchIndiaSeries = useCallback(() => {
+        const params: any = { with_watch_providers: "8", watch_region: "IN", with_origin_country: "IN", sort_by: "popularity.desc" }
+        if (selectedLang !== "all") params.with_original_language = selectedLang
+        return tmdb.discover.tv(params)
+    }, [tmdb, selectedLang])
 
-    // ── 8. Japanese TV Shows based on Manga / Anime ────────────────────────────
-    const fetchAnimeManga = useCallback(
-        () => tmdb.discover.tv({ with_genres: "16", with_origin_country: "JP", with_watch_providers: "8", watch_region: "IN", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    // ── 8. Regional South Cinema (Tamil & Malayalam & Telugu) ──────────────────
+    const fetchTamilCinema = useCallback(() => {
+        return tmdb.discover.movie({ with_watch_providers: "8", watch_region: "IN", with_original_language: "ta", sort_by: "popularity.desc" })
+    }, [tmdb])
 
-    // ── 9. Award-Winning Bingeworthy Crime TV Shows ────────────────────────────
-    const fetchAwardCrime = useCallback(
-        () => tmdb.discover.tv({ with_watch_providers: "8", watch_region: "IN", with_genres: "80", sort_by: "vote_average.desc", "vote_count.gte": 100 }),
-        [tmdb]
-    )
+    const fetchMalayalamCinema = useCallback(() => {
+        return tmdb.discover.movie({ with_watch_providers: "8", watch_region: "IN", with_original_language: "ml", sort_by: "popularity.desc" })
+    }, [tmdb])
 
-    // ── 10. For the Love of Goth / Dark Fantasy ────────────────────────────────
-    const fetchGothFantasy = useCallback(
-        () => tmdb.discover.tv({ with_watch_providers: "8", watch_region: "IN", with_genres: "10765,18", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    const fetchTeluguCinema = useCallback(() => {
+        return tmdb.discover.movie({ with_watch_providers: "8", watch_region: "IN", with_original_language: "te", sort_by: "popularity.desc" })
+    }, [tmdb])
 
-    // ── 11. US Movies Dubbed in Hindi / Multilingual ───────────────────────────
-    const fetchHindiDubbed = useCallback(
-        () => tmdb.discover.movie({ with_watch_providers: "8", watch_region: "IN", with_origin_country: "US", sort_by: "popularity.desc" }),
-        [tmdb]
-    )
+    // ── 9. Japanese TV Shows based on Manga / Anime ────────────────────────────
+    const fetchAnimeManga = useCallback(() => {
+        return tmdb.discover.tv({ with_genres: "16", with_origin_country: "JP", with_watch_providers: "8", watch_region: "IN", sort_by: "popularity.desc" })
+    }, [tmdb])
+
+    // ── 10. Award-Winning Bingeworthy Crime TV Shows ───────────────────────────
+    const fetchAwardCrime = useCallback(() => {
+        return tmdb.discover.tv({ with_watch_providers: "8", watch_region: "IN", with_genres: "80", sort_by: "vote_average.desc", "vote_count.gte": 100 })
+    }, [tmdb])
 
     return (
         <div className="space-y-8 animate-in duration-700 fade-in bg-black">
@@ -102,12 +108,12 @@ export function NetflixView({ tmdb, mediaType }: NetflixViewProps) {
                     />
                 )}
 
-                {/* 3. TV Thrillers & Mysteries */}
-                {(mediaType === "all" || mediaType === "tv") && (
+                {/* 3. New on Netflix */}
+                {(mediaType === "all" || mediaType === "movie") && (
                     <NetflixLandscapeRail
-                        title="TV Thrillers & Mysteries"
-                        fetcher={fetchTvThrillers}
-                        type="tv"
+                        title="New on Netflix"
+                        fetcher={fetchNewOnNetflix}
+                        type="movie"
                         badgeType="Recently added"
                     />
                 )}
@@ -122,23 +128,23 @@ export function NetflixView({ tmdb, mediaType }: NetflixViewProps) {
                     />
                 )}
 
-                {/* 5. Binge-worthy US TV Action & Adventure */}
+                {/* 5. TV Thrillers & Mysteries */}
+                {(mediaType === "all" || mediaType === "tv") && (
+                    <NetflixLandscapeRail
+                        title="TV Thrillers & Mysteries"
+                        fetcher={fetchTvThrillers}
+                        type="tv"
+                        badgeType="Recently added"
+                    />
+                )}
+
+                {/* 6. Binge-worthy US TV Action & Adventure */}
                 {(mediaType === "all" || mediaType === "tv") && (
                     <NetflixLandscapeRail
                         title="Binge-worthy US TV Action & Adventure"
                         fetcher={fetchBingeAction}
                         type="tv"
                         badgeType="New Episode"
-                    />
-                )}
-
-                {/* 6. New on Netflix */}
-                {(mediaType === "all" || mediaType === "movie") && (
-                    <NetflixLandscapeRail
-                        title="New on Netflix"
-                        fetcher={fetchNewOnNetflix}
-                        type="movie"
-                        badgeType="Recently added"
                     />
                 )}
 
@@ -152,7 +158,31 @@ export function NetflixView({ tmdb, mediaType }: NetflixViewProps) {
                     />
                 )}
 
-                {/* 8. Japanese TV Shows based on Manga */}
+                {/* 8. Regional South Cinema: Malayalam, Tamil, Telugu */}
+                {selectedLang === "all" && (
+                    <>
+                        <NetflixLandscapeRail
+                            title="Top Malayalam Cinema on Netflix"
+                            fetcher={fetchMalayalamCinema}
+                            type="movie"
+                            badgeType="Recently added"
+                        />
+                        <NetflixLandscapeRail
+                            title="Top Tamil Blockbusters on Netflix"
+                            fetcher={fetchTamilCinema}
+                            type="movie"
+                            badgeType="Recently added"
+                        />
+                        <NetflixLandscapeRail
+                            title="Top Telugu Hits on Netflix"
+                            fetcher={fetchTeluguCinema}
+                            type="movie"
+                            badgeType="Recently added"
+                        />
+                    </>
+                )}
+
+                {/* 9. Japanese TV Shows based on Manga */}
                 {(mediaType === "all" || mediaType === "tv") && (
                     <NetflixLandscapeRail
                         title="Japanese TV Shows based on Manga"
@@ -162,31 +192,12 @@ export function NetflixView({ tmdb, mediaType }: NetflixViewProps) {
                     />
                 )}
 
-                {/* 9. Award-Winning Bingeworthy Crime TV Shows */}
+                {/* 10. Award-Winning Bingeworthy Crime TV Shows */}
                 {(mediaType === "all" || mediaType === "tv") && (
                     <NetflixLandscapeRail
                         title="Award-Winning Bingeworthy Crime TV Shows"
                         fetcher={fetchAwardCrime}
                         type="tv"
-                    />
-                )}
-
-                {/* 10. For the Love of Goth */}
-                {(mediaType === "all" || mediaType === "tv") && (
-                    <NetflixLandscapeRail
-                        title="For the Love of Goth"
-                        fetcher={fetchGothFantasy}
-                        type="tv"
-                    />
-                )}
-
-                {/* 11. US Movies Dubbed in Hindi */}
-                {(mediaType === "all" || mediaType === "movie") && (
-                    <NetflixLandscapeRail
-                        title="US Movies Dubbed in Hindi"
-                        fetcher={fetchHindiDubbed}
-                        type="movie"
-                        badgeType="Recently added"
                     />
                 )}
             </div>
