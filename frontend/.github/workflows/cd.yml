@@ -1,0 +1,61 @@
+name: UI CD
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    build-and-test:
+        runs-on: ubuntu-latest
+        environment: production
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: "22"
+
+            - name: Install dependencies
+              run: npm install --force
+
+            - name: Build project
+              run: npm run build --if-present
+              env:
+                  VITE_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+                  VITE_STANDALONE: "true"
+                  VITE_OMSS_API_URL: "http://localhost:3000"
+
+            - name: Inject SPA GitHub Pages script
+              run: |
+                  INDEX_FILE="./build/client/client/index.html"
+
+                  sed -i '/<\/head>/i\
+                  <script type="text/javascript">\
+                    (function(l) {\
+                      if (l.search[1] === "/") {\
+                        var decoded = l.search.slice(1).split("&").map(function(s) {\
+                          return s.replace(/~and~/g, "&")\
+                        }).join("?");\
+                        window.history.replaceState(null, null,\
+                          l.pathname.slice(0, -1) + decoded + l.hash\
+                        );\
+                      }\
+                    }(window.location))\
+                  </script>' "$INDEX_FILE"
+
+            - name: Deploy to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v3
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./build/client/client/
+                  user_name: "github-actions[bot]"
+                  user_email: "github-actions[bot]@users.noreply.github.com"
+                  keep_files: true
+                  commit_message: "Deploy to GitHub Pages"
