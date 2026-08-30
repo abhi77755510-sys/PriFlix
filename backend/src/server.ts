@@ -198,7 +198,18 @@ async function handleSegmentFetch(segName: string, rangeHeader: string | undefin
             cleanHeaders['range'] = rangeHeader;
         }
 
-        const segmentRes = await fetch(targetUrl, { headers: cleanHeaders });
+        let segmentRes = await fetch(targetUrl, { headers: cleanHeaders });
+        if (segmentRes.status === 403 && (cleanHeaders.Referer || cleanHeaders.referer || cleanHeaders.Origin || cleanHeaders.origin)) {
+            const noRefHeaders = { ...cleanHeaders };
+            delete noRefHeaders.Referer;
+            delete noRefHeaders.referer;
+            delete noRefHeaders.Origin;
+            delete noRefHeaders.origin;
+            const retryRes = await fetch(targetUrl, { headers: noRefHeaders });
+            if (retryRes.ok) {
+                segmentRes = retryRes;
+            }
+        }
         const contentType = segmentRes.headers.get('content-type') || 'video/MP2T';
         const contentRange = segmentRes.headers.get('content-range');
         const acceptRanges = segmentRes.headers.get('accept-ranges');
@@ -362,8 +373,19 @@ async function main() {
                         }
                     }
 
-                    // For video segments (.ts, .m4s, .mp4) with custom session cookies/headers:
-                    const segmentRes = await fetch(targetUrl, { headers: cleanHeaders });
+                    // For video segments (.ts, .m4s, .mp4, page-*.html) with custom session cookies/headers:
+                    let segmentRes = await fetch(targetUrl, { headers: cleanHeaders });
+                    if (segmentRes.status === 403 && (cleanHeaders.Referer || cleanHeaders.referer || cleanHeaders.Origin || cleanHeaders.origin)) {
+                        const noRefHeaders = { ...cleanHeaders };
+                        delete noRefHeaders.Referer;
+                        delete noRefHeaders.referer;
+                        delete noRefHeaders.Origin;
+                        delete noRefHeaders.origin;
+                        const retryRes = await fetch(targetUrl, { headers: noRefHeaders });
+                        if (retryRes.ok) {
+                            segmentRes = retryRes;
+                        }
+                    }
                     const contentType = segmentRes.headers.get('content-type') || 'video/MP2T';
                     const contentRange = segmentRes.headers.get('content-range');
                     const acceptRanges = segmentRes.headers.get('accept-ranges');

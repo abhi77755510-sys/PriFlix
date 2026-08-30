@@ -1,11 +1,12 @@
-import React from "react"
 import { Flame, Film, Tv, Sparkles } from "lucide-react"
 
 export interface OTTPlatform {
     id: string
     name: string
-    providerId?: number
+    providerId?: number | string
+    networkId?: number | string
     genreId?: number
+    watchRegion?: string
     badgeClass: string
     accentColor: string
     bgGradient: string
@@ -25,6 +26,8 @@ export const OTT_PLATFORMS: OTTPlatform[] = [
         id: "netflix",
         name: "Netflix",
         providerId: 8,
+        networkId: 213,
+        watchRegion: "IN",
         badgeClass: "ott-badge-netflix",
         accentColor: "#E50914",
         bgGradient: "from-red-600/20 to-transparent",
@@ -33,34 +36,31 @@ export const OTT_PLATFORMS: OTTPlatform[] = [
     {
         id: "prime",
         name: "Prime Video",
-        providerId: 119,
+        providerId: "9|119",
+        networkId: 1024,
+        watchRegion: "IN",
         badgeClass: "ott-badge-prime",
         accentColor: "#00A8E1",
         bgGradient: "from-sky-500/20 to-transparent",
         tagline: "Amazon Originals, Top Hit Movies & Shows",
     },
     {
-        id: "disney",
-        name: "Disney+",
-        providerId: 337,
+        id: "hotstar",
+        name: "JioHotstar",
+        providerId: "237|337|122",
+        networkId: "8036|3919|2739",
+        watchRegion: "IN",
         badgeClass: "ott-badge-disney",
         accentColor: "#113CCF",
         bgGradient: "from-indigo-600/20 to-transparent",
-        tagline: "Marvel, Star Wars, Pixar & Disney Classics",
-    },
-    {
-        id: "apple",
-        name: "Apple TV+",
-        providerId: 350,
-        badgeClass: "ott-badge-apple",
-        accentColor: "#F8FAFC",
-        bgGradient: "from-slate-400/20 to-transparent",
-        tagline: "Apple Original Films, Emmy-Winning Series",
+        tagline: "Hotstar Specials, Marvel, Disney+ & Indian Blockbusters",
     },
     {
         id: "max",
         name: "Max",
-        providerId: 384,
+        providerId: "384|1899",
+        networkId: "8304|3186",
+        watchRegion: "US",
         badgeClass: "bg-purple-600/20 text-purple-400 border-purple-500/40",
         accentColor: "#9900FF",
         bgGradient: "from-purple-600/20 to-transparent",
@@ -68,7 +68,7 @@ export const OTT_PLATFORMS: OTTPlatform[] = [
     },
     {
         id: "anime",
-        name: "Anime",
+        name: "HiAnime",
         genreId: 16,
         badgeClass: "ott-badge-anime",
         accentColor: "#FF640A",

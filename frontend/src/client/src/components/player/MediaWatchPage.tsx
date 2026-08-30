@@ -19,7 +19,10 @@ function MediaWatchPageContent({ type }: { type: MediaType }) {
 
     const episode = searchParams.get("e") ? parseInt(searchParams.get("e")!) : type === "tv" ? 1 : undefined
 
-    const media = useMediaWatch(valid ? id! : "", type, valid ? season : undefined, valid ? episode : undefined)
+    const server = searchParams.get("server")
+    const audio = searchParams.get("audio")
+
+    const media = useMediaWatch(valid ? id! : "", type, valid ? season : undefined, valid ? episode : undefined, server, audio)
 
     const { error } = media
 

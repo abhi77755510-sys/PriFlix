@@ -7,7 +7,14 @@ import { mapMovieToUnified, mapTvEpisodeToUnified } from "../mappers/media.mappe
 import { mapPlaybackResponse } from "../mappers/playback.mapper"
 import { useMediaWatchContext } from "../providers/MediaWatchProvider"
 
-export function useMediaWatch(id: string, type: MediaType, season?: number, episode?: number) {
+export function useMediaWatch(
+    id: string,
+    type: MediaType,
+    season?: number,
+    episode?: number,
+    server?: string | null,
+    audio?: string | null
+) {
     const { setMedia, setError, setIsLoading } = useMediaWatchContext()
     const { t } = useTranslation("player")
     const { details, isLoading: detailsLoading, error: detailsError } = useMediaDetails(id, type, season, episode)
@@ -20,7 +27,7 @@ export function useMediaWatch(id: string, type: MediaType, season?: number, epis
         }
 
         if (!detailsLoading && !sourcesLoading && sources) {
-            const playback = mapPlaybackResponse(sources)
+            const playback = mapPlaybackResponse(sources, server, audio)
 
             let unified
             if (type === "movie" && details.movie) {
@@ -36,7 +43,7 @@ export function useMediaWatch(id: string, type: MediaType, season?: number, epis
                 setError(t("states.error"))
             }
         }
-    }, [details, sources, detailsLoading, sourcesLoading, detailsError, sourcesError, type, setMedia, setError, setIsLoading])
+    }, [details, sources, detailsLoading, sourcesLoading, detailsError, sourcesError, type, server, audio, setMedia, setError, setIsLoading, t])
 
     return {
         isLoading: detailsLoading || sourcesLoading,

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react"
 import type { TMDB } from "@lorenzopant/tmdb"
-import { ArrowRight, PlayCircle } from "lucide-react"
 import { Carousel, type CarouselApi, CarouselContent, CarouselItem } from "@/components/ui/carousel"
 import { useHeroSlides } from "./use-heroslides"
 import type { HeroFetcherResult } from "./types"

@@ -1,4 +1,4 @@
-import { ArrowLeft, Calendar, Play } from "lucide-react"
+import { ArrowLeft, Calendar } from "lucide-react"
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,18 +27,6 @@ export function MediaDrawer({ payload, canGoBack, isOpen, className }: MediaDraw
     const { closeAll, close } = useMediaDrawer()
 
     const navigate = useNavigate()
-
-    const handlePlay = () => {
-        if (!data) return
-
-        const path = payload.type === "movie" ? `/watch/movie/${data.id}` : `/watch/tv/${data.id}`
-
-        closeAll()
-
-        requestAnimationFrame(() => {
-            navigate(path)
-        })
-    }
 
     return (
         <Drawer open={isOpen} onOpenChange={(open) => !open && closeAll()}>
