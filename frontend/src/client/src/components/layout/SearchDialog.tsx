@@ -29,11 +29,13 @@ export function SearchDialog() {
     const [searchParams, setSearchParams] = useSearchParams()
 
     const [filter, setFilter] = useState<MediaFilter>("all")
+    const [selectedOtt, setSelectedOtt] = useState<string>("all")
 
     // read params
     useEffect(() => {
         const q = searchParams.get("q")
         const f = searchParams.get("type") as MediaFilter | null
+        const ott = searchParams.get("ott")
 
         if (q) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -43,6 +45,10 @@ export function SearchDialog() {
 
         if (f === "movie" || f === "tv" || f === "all") {
             setFilter(f)
+        }
+
+        if (ott) {
+            setSelectedOtt(ott)
         }
     }, [searchParams, setShowSearch])
 
@@ -84,8 +90,14 @@ export function SearchDialog() {
             params.delete("type")
         }
 
+        if (selectedOtt !== "all") {
+            params.set("ott", selectedOtt)
+        } else {
+            params.delete("ott")
+        }
+
         setSearchParams(params, { replace: true })
-    }, [query, filter, showSearch, setSearchParams, searchParams])
+    }, [query, filter, selectedOtt, showSearch, setSearchParams, searchParams])
 
     // debounced search
     useEffect(() => {
@@ -161,22 +173,32 @@ export function SearchDialog() {
         }
 
         return (
-            <CommandItem key={`${item.media_type}-${item.id}`} value={`${title}-${item.media_type}-${item.id}`} onSelect={() => handleSelect(item)} className="flex items-center gap-3">
-                {image ? (
-                    <img src={image} alt={title} className="h-14 w-10 shrink-0 rounded-md object-cover" />
-                ) : (
-                    <div className="flex h-14 w-10 items-center justify-center rounded-md bg-muted">{icon}</div>
-                )}
+            <CommandItem key={`${item.media_type}-${item.id}`} value={`${title}-${item.media_type}-${item.id}`} onSelect={() => handleSelect(item)} className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-zinc-800/60 transition-colors">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    {image ? (
+                        <img src={image} alt={title} className="h-14 w-10 shrink-0 rounded-lg object-cover border border-white/10" />
+                    ) : (
+                        <div className="flex h-14 w-10 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400">{icon}</div>
+                    )}
 
-                <div className="flex flex-col overflow-hidden">
-                    <span className="truncate text-sm font-medium">{title}</span>
+                    <div className="flex flex-col overflow-hidden">
+                        <span className="truncate text-sm font-semibold text-zinc-100">{title}</span>
 
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground ring-0 outline-none focus:ring-0 focus:outline-none">
-                        {rating !== null && <StarRating rating={rating} />}
-
-                        <span>{subtitle}</span>
+                        <div className="flex items-center gap-3 text-xs text-zinc-400 mt-0.5">
+                            {rating !== null && rating > 0 && <StarRating rating={rating} />}
+                            <span>{subtitle ? new Date(subtitle).getFullYear() || subtitle : ""}</span>
+                            <span className="rounded bg-zinc-800 px-1 py-0.2 text-[10px] uppercase font-bold text-zinc-300">
+                                {item.media_type === "movie" ? "Movie" : "Series"}
+                            </span>
+                        </div>
                     </div>
                 </div>
+
+                {selectedOtt !== "all" && (
+                    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-primary/20 text-primary border border-primary/30">
+                        {selectedOtt}
+                    </span>
+                )}
             </CommandItem>
         )
     }

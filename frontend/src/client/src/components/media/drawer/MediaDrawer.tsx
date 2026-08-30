@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils.ts"
 import { StarRating } from "@/components/media/StarRating"
 import { useNavigate } from "react-router-dom"
 import { useMediaDrawer } from "@/components/media/drawer/hooks/useMediaDrawer.ts"
+import { PrePlaySelector } from "./PrePlaySelector"
 
 interface MediaDrawerProps {
     payload: MediaDrawerPayload
@@ -116,15 +117,32 @@ export function MediaDrawer({ payload, canGoBack, isOpen, className }: MediaDraw
                                 ))}
                             </div>
 
-                            {/* ACTIONS */}
-                            <div className="mb-6 flex animate-in flex-wrap items-center gap-3 delay-200 duration-700 fade-in">
-                                <Button className="rounded-full px-8 font-semibold shadow-lg transition-all hover:scale-105 hover:shadow-xl" onClick={handlePlay}>
-                                    <Play className="mr-2 h-5 w-5 fill-white" />
-                                    Play
-                                </Button>
+                            {/* PRE-PLAY SERVER & AUDIO CONFIGURATION */}
+                            <div className="mb-6 animate-in delay-200 duration-700 fade-in">
+                                <PrePlaySelector
+                                    onPlay={(config) => {
+                                        if (!data) return
+                                        const queryParams = new URLSearchParams()
+                                        if (config.server && config.server !== "auto") queryParams.set("server", config.server)
+                                        if (config.audioLanguage && config.audioLanguage !== "all") queryParams.set("audio", config.audioLanguage)
+                                        const queryStr = queryParams.toString() ? `?${queryParams.toString()}` : ""
 
-                                {data.trailer && <TrailerDialog trailerId={data.trailer} title={data.title} />}
+                                        const path = payload.type === "movie" ? `/watch/movie/${data.id}${queryStr}` : `/watch/tv/${data.id}${queryStr}`
+
+                                        closeAll()
+                                        requestAnimationFrame(() => {
+                                            navigate(path)
+                                        })
+                                    }}
+                                />
                             </div>
+
+                            {/* TRAILER ACTION */}
+                            {data.trailer && (
+                                <div className="mb-6">
+                                    <TrailerDialog trailerId={data.trailer} title={data.title} />
+                                </div>
+                            )}
 
                             {/* OVERVIEW */}
                             <div className="mb-8 max-w-2xl animate-in text-left text-sm leading-relaxed text-white/80 delay-300 duration-700 fade-in">{data.overview}</div>

@@ -279,3 +279,55 @@
         cursor: pointer;
     }
 }
+
+/* ── Modern Glassmorphism & OTT Platform Enhancements ─── */
+.glass-panel {
+    background: rgba(18, 21, 36, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+    background: rgba(18, 21, 36, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(59, 130, 246, 0.25);
+}
+
+.ott-badge-netflix {
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.2), rgba(229, 9, 20, 0.05));
+    border: 1px solid rgba(229, 9, 20, 0.4);
+    color: #ff3b47;
+}
+
+.ott-badge-prime {
+    background: linear-gradient(135deg, rgba(0, 168, 225, 0.2), rgba(0, 168, 225, 0.05));
+    border: 1px solid rgba(0, 168, 225, 0.4);
+    color: #38bdf8;
+}
+
+.ott-badge-disney {
+    background: linear-gradient(135deg, rgba(17, 60, 207, 0.2), rgba(17, 60, 207, 0.05));
+    border: 1px solid rgba(17, 60, 207, 0.4);
+    color: #60a5fa;
+}
+
+.ott-badge-apple {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #f8fafc;
+}
+
+.ott-badge-anime {
+    background: linear-gradient(135deg, rgba(255, 100, 10, 0.2), rgba(255, 100, 10, 0.05));
+    border: 1px solid rgba(255, 100, 10, 0.4);
+    color: #fb923c;
+}

@@ -39,8 +39,12 @@ export default function Header() {
                     style={hasGlassSize ? { backdropFilter: `url(#${filterId}) saturate(1)` } : undefined}
                 >
                     {/* Logo */}
-                    <Link to="/" className="mr-1 flex items-center px-2">
-                        <Favicon className="h-12 w-auto text-primary" />
+                    <Link to="/" className="mr-2 flex items-center gap-2 px-2 group">
+                        <Favicon className="h-8 w-auto text-primary transition-transform group-hover:scale-110" />
+                        <div className="flex items-center text-base font-black tracking-tight select-none">
+                            <span className="text-blue-500 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]">CINE</span>
+                            <span className="text-red-500 drop-shadow-[0_0_12px_rgba(239,68,68,0.5)]">STREAM</span>
+                        </div>
                     </Link>
 
                     {/* Nav links (hidden below sm to avoid overflowing the pill on narrow screens) */}
