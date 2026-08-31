@@ -345,7 +345,7 @@ async function handleSegmentFetch(segName: string, rangeHeader: string | undefin
 
         if (segmentRes.body) {
             const stream = Readable.fromWeb(segmentRes.body as any);
-            pipeline(stream, reply.raw, () => {});
+            pipeline(stream, reply.raw, () => { });
             return true;
         }
 
@@ -365,7 +365,7 @@ async function main() {
         // Network
         host: process.env.HOST ?? (process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost'),
         port: Number(process.env.PORT ?? 3000),
-        publicUrl: process.env.PUBLIC_URL,
+        publicUrl: process.env.PUBLIC_URL ?? (process.env.NODE_ENV === 'production' || process.env.RENDER ? 'https://priflix-backend.onrender.com' : undefined),
 
         // Cache (memory for dev, Redis for prod)
         cache: {
@@ -394,10 +394,11 @@ async function main() {
         },
 
         cors: {
-            origin: process.env.CORS_ORIGIN ?? '*',
-            methods: ['GET', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization'],
+            origin: true,
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'Range', 'X-Requested-With'],
             exposedHeaders: ['Content-Range', 'Accept-Ranges', 'ETag'],
+            credentials: true,
             preflightContinue: false,
             optionsSuccessStatus: 204
         },
@@ -523,7 +524,7 @@ async function main() {
 
                     if (segmentRes.body) {
                         const stream = Readable.fromWeb(segmentRes.body as any);
-                        pipeline(stream, reply.raw, () => {});
+                        pipeline(stream, reply.raw, () => { });
                         return;
                     }
 
@@ -567,7 +568,7 @@ async function main() {
                 reply.raw.writeHead(segRes.status, respHeaders);
                 if (segRes.body) {
                     const stream = Readable.fromWeb(segRes.body as any);
-                    pipeline(stream, reply.raw, () => {});
+                    pipeline(stream, reply.raw, () => { });
                     return;
                 }
                 const arrayBuf = await segRes.arrayBuffer();

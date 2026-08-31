@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { useParams, useSearchParams, useNavigate } from "react-router-dom"
 import { MediaWatchProvider } from "./providers/MediaWatchProvider"
 import { useMediaWatch } from "./hooks/useMediaWatch"
@@ -6,15 +5,12 @@ import { MediaPlayer } from "./MediaPlayer"
 import { ErrorState } from "./ErrorState"
 import type { MediaType } from "./types/media.types"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, RefreshCw } from "lucide-react"
-import { useOmss } from "@/hooks/use-omss.ts"
+import { ChevronLeft } from "lucide-react"
 
 function MediaWatchPageContent({ type }: { type: MediaType }) {
     const { id } = useParams<{ id: string }>()
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
-
-    const { valid } = useOmss()
 
     const season = searchParams.get("s") ? parseInt(searchParams.get("s")!) : type === "tv" ? 1 : undefined
 
@@ -23,28 +19,9 @@ function MediaWatchPageContent({ type }: { type: MediaType }) {
     const server = searchParams.get("server")
     const audio = searchParams.get("audio")
 
-    const media = useMediaWatch(valid ? id! : "", type, valid ? season : undefined, valid ? episode : undefined, server, audio)
+    const media = useMediaWatch(id!, type, season, episode, server, audio)
 
     const { error } = media
-
-    if (!valid) {
-        return (
-            <div className="relative min-h-screen bg-black text-foreground">
-                <div className="flex min-h-screen w-full items-center justify-center gap-4">
-                    <div className="space-y-4 text-center">
-                        <p>Your OMSS server is unreachable. Please set it up correctly.</p>
-                        <Button onClick={() => navigate("/settings?tab=omss")}>Go to Settings</Button>
-                    </div>
-                </div>
-
-                <div className="absolute top-4 left-4 z-50">
-                    <Button variant="ghost" className="border border-border" onClick={() => navigate(-1)}>
-                        <ChevronLeft className="h-6 w-6" /> Back
-                    </Button>
-                </div>
-            </div>
-        )
-    }
 
     if (error) {
         return <ErrorState error={error} />
