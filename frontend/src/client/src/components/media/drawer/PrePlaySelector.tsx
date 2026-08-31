@@ -67,11 +67,10 @@ export function PrePlaySelector({ onPlay, defaultServer = "auto", defaultAudio =
                                 key={srv.id}
                                 type="button"
                                 onClick={() => setSelectedServer(srv.id)}
-                                className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-xs font-medium transition-all ${
-                                    isSelected
+                                className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-xs font-medium transition-all ${isSelected
                                         ? "bg-blue-600/20 text-blue-400 border border-blue-500/50 shadow-[0_0_12px_rgba(59,130,246,0.2)] scale-[1.01]"
                                         : "bg-zinc-900/60 text-zinc-300 border border-zinc-800/80 hover:bg-zinc-800/60 hover:text-white"
-                                }`}
+                                    }`}
                             >
                                 <span className="font-semibold">{srv.name}</span>
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${isSelected ? "bg-blue-500/30 text-blue-300" : "bg-zinc-800 text-zinc-400"}`}>
@@ -97,11 +96,10 @@ export function PrePlaySelector({ onPlay, defaultServer = "auto", defaultAudio =
                                 key={lang.id}
                                 type="button"
                                 onClick={() => setSelectedAudio(lang.id)}
-                                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-medium transition-all ${
-                                    isSelected
+                                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-medium transition-all ${isSelected
                                         ? "bg-red-600/20 text-red-400 border border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.2)] scale-105"
                                         : "bg-zinc-900/60 text-zinc-300 border border-zinc-800/80 hover:bg-zinc-800/60 hover:text-white"
-                                }`}
+                                    }`}
                             >
                                 <span>{lang.label}</span>
                                 <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400">{lang.badge}</span>

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import Hls from "hls.js"
 import { useTranslation } from "react-i18next"
 import { usePlayerState } from "./hooks/usePlayerState"
@@ -8,17 +9,35 @@ import { useEpisodeAutoplay } from "./hooks/useEpisodeAutoplay"
 import { EpisodeAutoplayOverlay } from "./EpisodeAutoplayOverlay"
 import { useSubtitles } from "@/components/player/hooks/useSubtitles.ts"
 import { CustomSubtitles } from "@/components/player/CustomSubtitles"
+import { useMediaWatchContext } from "./providers/MediaWatchProvider"
 
 export function MediaPlayer() {
+    const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+
     const videoRef = useRef<HTMLVideoElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
+    const popoverRef = useRef<HTMLDivElement>(null)
     const hlsRef = useRef<Hls | null>(null)
 
     const { media, isPlaying, isLoading, currentTime, duration, volume, isMuted, setIsPlaying, setIsLoading, setCurrentTime, setDuration, setVolume, setIsMuted, setError } = usePlayerState()
+    const { selectSource } = useMediaWatchContext()
     const { t } = useTranslation("player")
 
     const { handleEpisodeEnded } = useEpisodeAutoplay()
     const { selectedSubtitle } = useSubtitles()
+
+    const handleNavigateEpisode = (s: number, e: number) => {
+        if (!media) return
+        const currentServer = searchParams.get("server") || selectedSource?.provider?.id || selectedSource?.provider?.name
+        const queryParams = new URLSearchParams()
+        queryParams.set("s", s.toString())
+        queryParams.set("e", e.toString())
+        if (currentServer && currentServer !== "auto") {
+            queryParams.set("server", currentServer)
+        }
+        navigate(`/watch/tv/${media.id}?${queryParams.toString()}`)
+    }
 
     const [showControls, setShowControls] = useState(true)
     const [isFullscreen, setIsFullscreen] = useState(false)
@@ -65,13 +84,17 @@ export function MediaPlayer() {
 
         if (selectedSource.type === "hls") {
             if (Hls.isSupported()) {
+                // Detect HEVC/H.265 support - most desktop Chrome/Firefox don't support it natively
+                const hevcSupported = video.canPlayType('video/mp4; codecs="hev1.1.6.L93.B0"') !== '' ||
+                    video.canPlayType('video/mp4; codecs="hvc1"') !== ''
+
                 const hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: false,
-                    startFragPrefetch: true, // Aggressive prefetch next fragments
-                    maxBufferLength: 120, // Buffer up to 120 seconds ahead
-                    maxMaxBufferLength: 300, // Buffer up to 5 minutes ahead
-                    maxBufferSize: 120 * 1000 * 1000, // 120MB buffer memory
+                    startFragPrefetch: true,
+                    maxBufferLength: 120,
+                    maxMaxBufferLength: 300,
+                    maxBufferSize: 120 * 1000 * 1000,
                     maxBufferHole: 0.5,
                     progressive: true,
                     nudgeMaxRetry: 5,
@@ -82,6 +105,19 @@ export function MediaPlayer() {
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     if (isPlaying) video.play().catch(() => setIsPlaying(false))
+
+                    // Filter out HEVC levels if not supported by the browser
+                    if (!hevcSupported) {
+                        const hevcCodecs = ['hev1', 'hvc1', 'dvh1', 'dvhe']
+                        const h264Levels = hls.levels.filter(level => {
+                            const codec = (level.videoCodec || level.attrs?.CODECS || '').toLowerCase()
+                            return !hevcCodecs.some(hc => codec.includes(hc))
+                        })
+                        if (h264Levels.length > 0 && h264Levels.length < hls.levels.length) {
+                            console.log(`[Player] HEVC not supported: filtered ${hls.levels.length - h264Levels.length} HEVC level(s), keeping ${h264Levels.length} H.264 level(s)`)
+                        }
+                    }
+
                     const levels = hls.levels.map((level, index) => ({
                         index,
                         height: level.height,
@@ -108,6 +144,7 @@ export function MediaPlayer() {
             } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
                 video.src = selectedSource.url
             }
+
         } else {
             video.src = selectedSource.url
             if (isPlaying) video.play().catch(() => setIsPlaying(false))
@@ -292,14 +329,77 @@ export function MediaPlayer() {
         }
     }
 
-    const toggleFullscreen = () => {
-        if (!containerRef.current) return
-        if (!document.fullscreenElement) {
-            containerRef.current.requestFullscreen()
-            setIsFullscreen(true)
-        } else {
-            document.exitFullscreen()
-            setIsFullscreen(false)
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isFS = Boolean(
+                document.fullscreenElement ||
+                (document as any).webkitFullscreenElement ||
+                (document as any).mozFullScreenElement ||
+                (document as any).msFullscreenElement
+            )
+            setIsFullscreen(isFS)
+        }
+
+        document.addEventListener("fullscreenchange", handleFullscreenChange)
+        document.addEventListener("webkitfullscreenchange", handleFullscreenChange)
+        document.addEventListener("mozfullscreenchange", handleFullscreenChange)
+        document.addEventListener("MSFullscreenChange", handleFullscreenChange)
+
+        return () => {
+            document.removeEventListener("fullscreenchange", handleFullscreenChange)
+            document.removeEventListener("webkitfullscreenchange", handleFullscreenChange)
+            document.removeEventListener("mozfullscreenchange", handleFullscreenChange)
+            document.removeEventListener("MSFullscreenChange", handleFullscreenChange)
+        }
+    }, [])
+
+    const toggleFullscreen = async () => {
+        const container = containerRef.current
+        const video = videoRef.current
+        if (!container && !video) return
+
+        try {
+            const isFS = Boolean(
+                document.fullscreenElement ||
+                (document as any).webkitFullscreenElement ||
+                (document as any).mozFullScreenElement ||
+                (document as any).msFullscreenElement
+            )
+
+            if (!isFS) {
+                let success = false
+                if (container && container.requestFullscreen) {
+                    try {
+                        await container.requestFullscreen()
+                        success = true
+                    } catch {
+                        success = false
+                    }
+                }
+                if (!success && container && (container as any).webkitRequestFullscreen) {
+                    try {
+                        (container as any).webkitRequestFullscreen()
+                        success = true
+                    } catch {
+                        success = false
+                    }
+                }
+                if (!success && video) {
+                    if (video.requestFullscreen) {
+                        await video.requestFullscreen().catch(() => { })
+                    } else if ((video as any).webkitEnterFullscreen) {
+                        (video as any).webkitEnterFullscreen()
+                    }
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    await document.exitFullscreen().catch(() => { })
+                } else if ((document as any).webkitExitFullscreen) {
+                    (document as any).webkitExitFullscreen()
+                }
+            }
+        } catch (err) {
+            console.error("Fullscreen toggle failed:", err)
         }
     }
 
@@ -370,7 +470,7 @@ export function MediaPlayer() {
                 onVolumeChange={handleVolumeChange}
                 onToggleFullscreen={toggleFullscreen}
                 show={showControls || !isPlaying}
-                ref={containerRef}
+                ref={popoverRef}
                 isPiP={isPiP}
                 onTogglePiP={togglePictureInPicture}
                 playbackRate={playbackRate}
@@ -379,6 +479,10 @@ export function MediaPlayer() {
                 currentQuality={currentQuality}
                 onQualityChange={handleQualityChange}
                 buffered={bufferedTime}
+                mediaType={media?.type}
+                seasonNumber={media?.seasonNumber}
+                episodeNumber={media?.episodeNumber}
+                onNavigateEpisode={handleNavigateEpisode}
             />
 
             <EpisodeAutoplayOverlay

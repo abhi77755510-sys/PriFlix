@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useParams, useSearchParams, useNavigate } from "react-router-dom"
 import { MediaWatchProvider } from "./providers/MediaWatchProvider"
 import { useMediaWatch } from "./hooks/useMediaWatch"
@@ -5,7 +6,7 @@ import { MediaPlayer } from "./MediaPlayer"
 import { ErrorState } from "./ErrorState"
 import type { MediaType } from "./types/media.types"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, RefreshCw } from "lucide-react"
 import { useOmss } from "@/hooks/use-omss.ts"
 
 function MediaWatchPageContent({ type }: { type: MediaType }) {
@@ -52,7 +53,7 @@ function MediaWatchPageContent({ type }: { type: MediaType }) {
     return (
         <div className="relative min-h-screen bg-black text-foreground">
             <div className="absolute top-4 left-4 z-50">
-                <Button variant="ghost" className="border border-border" onClick={() => navigate(-1)}>
+                <Button variant="ghost" className="border border-border bg-black/60 backdrop-blur-md" onClick={() => navigate(-1)}>
                     <ChevronLeft className="h-6 w-6" /> Back
                 </Button>
             </div>

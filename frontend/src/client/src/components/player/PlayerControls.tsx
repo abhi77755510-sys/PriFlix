@@ -1,5 +1,5 @@
-import React, { useEffect, type WheelEventHandler } from "react"
-import { Play, Pause, Maximize, Minimize, Volume2, VolumeX, Undo, Redo, PictureInPicture, PictureInPicture2, HardDrive } from "lucide-react"
+import React, { useEffect, useState, type WheelEventHandler } from "react"
+import { Play, Pause, Maximize, Minimize, Volume2, VolumeX, Undo, Redo, PictureInPicture, PictureInPicture2, HardDrive, SkipBack, SkipForward } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
@@ -39,6 +39,11 @@ interface PlayerControlsProps {
     onQualityChange: (level: number) => void
 
     buffered?: number
+
+    mediaType?: "movie" | "tv"
+    seasonNumber?: number
+    episodeNumber?: number
+    onNavigateEpisode?: (season: number, episode: number) => void
 }
 
 export function PlayerControls({
@@ -66,8 +71,28 @@ export function PlayerControls({
     currentQuality,
     onQualityChange,
     buffered,
+    mediaType,
+    seasonNumber = 1,
+    episodeNumber = 1,
+    onNavigateEpisode,
 }: PlayerControlsProps) {
     const { t } = useTranslation("player")
+
+    const [epInput, setEpInput] = useState<string>(episodeNumber.toString())
+
+    useEffect(() => {
+        setEpInput(episodeNumber.toString())
+    }, [episodeNumber])
+
+    const handleEpSubmit = () => {
+        const parsed = parseInt(epInput, 10)
+        if (!isNaN(parsed) && parsed > 0 && onNavigateEpisode) {
+            onNavigateEpisode(seasonNumber, parsed)
+        } else {
+            setEpInput(episodeNumber.toString())
+        }
+    }
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             // Ignore when typing in inputs/textareas
@@ -115,9 +140,8 @@ export function PlayerControls({
 
     return (
         <div
-            className={`absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/20 via-transparent to-black/15 px-4 pt-1 pb-2 transition-opacity duration-300 ${
-                show ? "opacity-100" : "pointer-events-none opacity-0"
-            }`}
+            className={`absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/20 via-transparent to-black/15 px-4 pt-1 pb-2 transition-opacity duration-300 ${show ? "opacity-100" : "pointer-events-none opacity-0"
+                }`}
             onClick={onDivClick}
             onDoubleClick={onDoubleClick}
             onWheel={onWheel}
@@ -142,7 +166,61 @@ export function PlayerControls({
                             <Redo width={20} height={20} />
                         </Button>
 
-                        <div className="ml-4 flex items-center gap-2">
+                        {/* TV SHOWS ONLY: Season / Episode Navigation & Selector Controls */}
+                        {mediaType === "tv" && onNavigateEpisode && (
+                            <div className="ml-2 flex items-center gap-1.5 rounded-lg border border-white/20 bg-black/50 px-2 py-1 backdrop-blur-md">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-white hover:bg-white/20 disabled:opacity-30"
+                                    onClick={() => onNavigateEpisode(seasonNumber, Math.max(1, episodeNumber - 1))}
+                                    disabled={episodeNumber <= 1}
+                                    title="Previous Episode"
+                                >
+                                    <SkipBack className="h-3.5 w-3.5" />
+                                </Button>
+
+                                <select
+                                    value={seasonNumber}
+                                    onChange={(e) => onNavigateEpisode(parseInt(e.target.value, 10), 1)}
+                                    className="h-7 rounded border border-zinc-700 bg-zinc-900 px-1.5 text-xs font-semibold text-white outline-none"
+                                >
+                                    {Array.from({ length: 15 }, (_, i) => i + 1).map((s) => (
+                                        <option key={s} value={s}>
+                                            S{s}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <div className="flex items-center gap-1 text-xs font-bold text-zinc-300">
+                                    <span>E</span>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={epInput}
+                                        onChange={(e) => setEpInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") handleEpSubmit()
+                                        }}
+                                        onBlur={handleEpSubmit}
+                                        className="h-7 w-11 rounded border border-zinc-700 bg-zinc-900 text-center text-xs font-bold text-white outline-none"
+                                        title="Type Episode Number and press Enter"
+                                    />
+                                </div>
+
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-white hover:bg-white/20"
+                                    onClick={() => onNavigateEpisode(seasonNumber, episodeNumber + 1)}
+                                    title="Next Episode"
+                                >
+                                    <SkipForward className="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
+                        )}
+
+                        <div className="ml-2 flex items-center gap-2">
                             <Button
                                 variant="ghost"
                                 size="icon"

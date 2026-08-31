@@ -9,6 +9,16 @@ const PROVIDER_PRIORITY: Record<string, number> = {
     vidnest: 4
 };
 
+// Per-provider timeout in ms — CineSu needs more time for search+discovery
+const PROVIDER_TIMEOUTS: Record<string, number> = {
+    cinesu: 25000,
+    vidlink: 20000,
+    vidnest: 20000,
+    fsharetv: 15000,
+    fshare: 15000
+};
+const DEFAULT_PROVIDER_TIMEOUT = 20000;
+
 function sortSourcesByPriority(sources: any[]): any[] {
     return [...sources].sort((a, b) => {
         const pA = PROVIDER_PRIORITY[a.provider?.id?.toLowerCase()] ?? 99;
@@ -18,6 +28,111 @@ function sortSourcesByPriority(sources: any[]): any[] {
 }
 
 if (SourceService && SourceService.prototype) {
+    (SourceService.prototype as any).validateSourceUrl = async function (proxyData: any, timeoutMs = 4000) {
+        if (!proxyData || !proxyData.url) return true;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const reqHeaders: Record<string, string> = { ...(proxyData.headers ?? {}) };
+            reqHeaders['Range'] = 'bytes=0-0';
+            const res = await fetch(proxyData.url, {
+                method: 'GET',
+                headers: reqHeaders,
+                signal: controller.signal
+            });
+            if (res.ok || res.status === 206 || res.status === 429) {
+                return true;
+            }
+            return false;
+        } catch {
+            return false;
+        } finally {
+            clearTimeout(timeout);
+        }
+    };
+
+    // Patch fetchFromProviders to add per-provider timeouts
+    const originalFetchFromProviders = (SourceService.prototype as any).fetchFromProviders;
+    (SourceService.prototype as any).fetchFromProviders = async function (type: string, media: any) {
+        const providers = this.registry.getProviders();
+        if (providers.length === 0) {
+            console.warn('[SourceService] No providers registered');
+            return [];
+        }
+        let supportedProviders = providers
+            .filter((p: any) => p.capabilities.supportedContentTypes.includes(type === 'movie' ? 'movies' : 'tv'))
+            .filter((p: any) => p.enabled);
+
+        const targetProvider = (media?.providerId || media?.provider || media?.server || '').toString().toLowerCase().trim();
+        if (targetProvider && targetProvider !== 'auto' && targetProvider !== 'all') {
+            const filtered = supportedProviders.filter((p: any) => {
+                const pid = (p.id || '').toLowerCase();
+                const pname = (p.name || '').toLowerCase();
+                return pid === targetProvider || pname.includes(targetProvider) || targetProvider.includes(pid);
+            });
+            if (filtered.length > 0) {
+                supportedProviders = filtered;
+            }
+        }
+
+        console.log(`[SourceService] Fetching from ${supportedProviders.length} provider(s) (${providers.length - supportedProviders.length} filtered out)`);
+
+        const promises = supportedProviders.map(async (provider: any) => {
+            const providerId = (provider.id || '').toLowerCase();
+            const timeoutMs = PROVIDER_TIMEOUTS[providerId] ?? DEFAULT_PROVIDER_TIMEOUT;
+            const startTime = Date.now();
+
+            try {
+                const providerPromise = type === 'movie'
+                    ? provider.getMovieSources(media)
+                    : provider.getTVSources(media);
+
+                const timeoutPromise = new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error(`Provider '${provider.name}' timed out after ${timeoutMs}ms`)), timeoutMs)
+                );
+
+                let result: any = await Promise.race([providerPromise, timeoutPromise]);
+
+                // Validate sources (lightweight parallel validation)
+                if (process.env.NODE_ENV?.toLowerCase() !== 'test') {
+                    const { ProxyService } = await import('@omss/framework').catch(() => ({ ProxyService: null })) as any;
+                    if (ProxyService) {
+                        const validatedSources = await Promise.allSettled(
+                            result.sources.map(async (source: any) => {
+                                try {
+                                    const urlObj = new URL(source.url);
+                                    const data = urlObj.searchParams.get('data');
+                                    if (!data) return null;
+                                    const proxyData = ProxyService.decodeProxyData(data);
+                                    const isValid = await this.validateSourceUrl(proxyData);
+                                    return isValid ? source : null;
+                                } catch {
+                                    return null;
+                                }
+                            })
+                        );
+                        result.sources = validatedSources
+                            .filter((r: any) => r.status === 'fulfilled')
+                            .map((r: any) => r.value)
+                            .filter(Boolean);
+                    }
+                }
+
+                const duration = Date.now() - startTime;
+                console.log(`[SourceService] Provider '${provider.name}' returned ${result.sources.length} source(s) in ${duration}ms`);
+                return result;
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                const msg = error instanceof Error ? error.message : 'Unknown error';
+                console.error(`[SourceService] Provider '${provider.name}' failed in ${duration}ms:`, msg);
+                return { sources: [], subtitles: [], diagnostics: [{ code: 'PROVIDER_ERROR', message: msg, field: '', severity: 'error' }] };
+            }
+        });
+
+        const results = await Promise.allSettled(promises);
+        return results.filter((r: any) => r.status === 'fulfilled').map((r: any) => r.value);
+    };
+
     const originalGetMovieSources = SourceService.prototype.getMovieSources;
     SourceService.prototype.getMovieSources = async function (...args: any[]) {
         const start = Date.now();
@@ -168,7 +283,7 @@ function rewriteM3u8Manifest(manifestText: string, targetUrl: string, headers: R
             const trimmed = line.trim();
             if (!trimmed) return line;
 
-            if (trimmed.startsWith('#EXT-X-KEY:') || trimmed.startsWith('#EXT-X-MEDIA:')) {
+            if (trimmed.startsWith('#EXT')) {
                 return trimmed.replace(/URI="([^"]+)"/g, (_, uri) => {
                     const absoluteUri = makeAbsolute(uri);
                     const proxyData = encodeURIComponent(JSON.stringify({ url: absoluteUri, headers }));
@@ -324,12 +439,15 @@ async function main() {
                     const isM3u8 = targetUrl.includes('.m3u8') || targetUrl.includes('playlist') || targetUrl.includes('getm3u8');
 
                     if (Object.keys(headers).length === 0 && !isM3u8) {
-                        reply.raw.writeHead(302, {
-                            Location: targetUrl,
-                            'Access-Control-Allow-Origin': '*'
-                        });
-                        reply.raw.end();
-                        return;
+                        const isVidLinkMp4 = targetUrl.includes('hakunaymatata.com') || targetUrl.includes('vidlink');
+                        if (!isVidLinkMp4) {
+                            reply.raw.writeHead(302, {
+                                Location: targetUrl,
+                                'Access-Control-Allow-Origin': '*'
+                            });
+                            reply.raw.end();
+                            return;
+                        }
                     }
 
                     if (isM3u8) {
@@ -416,6 +534,75 @@ async function main() {
                     // ignore
                 }
             }
+        } else if (request.url.startsWith('/m/v1/')) {
+            reply.hijack();
+            try {
+                const targetUrl = `https://glendale-plumbing.com${request.url}`;
+                const cleanHeaders: Record<string, string> = {
+                    'User-Agent':
+                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                    Referer: 'https://cine.su/',
+                    Origin: 'https://cine.su'
+                };
+                if (request.headers.range) {
+                    cleanHeaders['range'] = request.headers.range;
+                }
+
+                const segRes = await fetch(targetUrl, { headers: cleanHeaders });
+                const contentType = segRes.headers.get('content-type') || 'video/mp4';
+                const contentRange = segRes.headers.get('content-range');
+                const acceptRanges = segRes.headers.get('accept-ranges');
+                const contentLength = segRes.headers.get('content-length');
+
+                const respHeaders: Record<string, string> = {
+                    'Content-Type': contentType,
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                    'Access-Control-Allow-Headers': '*'
+                };
+                if (contentRange) respHeaders['Content-Range'] = contentRange;
+                if (acceptRanges) respHeaders['Accept-Ranges'] = acceptRanges;
+                if (contentLength) respHeaders['Content-Length'] = contentLength;
+
+                reply.raw.writeHead(segRes.status, respHeaders);
+                if (segRes.body) {
+                    const stream = Readable.fromWeb(segRes.body as any);
+                    pipeline(stream, reply.raw, () => {});
+                    return;
+                }
+                const arrayBuf = await segRes.arrayBuffer();
+                reply.raw.end(Buffer.from(arrayBuf));
+            } catch {
+                reply.raw.writeHead(500);
+                reply.raw.end('Glendale segment fetch failed');
+            }
+            return;
+        } else if (request.url.startsWith('/subtitles/')) {
+            reply.hijack();
+            try {
+                const targetUrl = `https://glendale-plumbing.com${request.url}`;
+                const subRes = await fetch(targetUrl, {
+                    headers: {
+                        'User-Agent':
+                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                        Referer: 'https://cine.su/',
+                        Origin: 'https://cine.su'
+                    }
+                });
+
+                const contentType = subRes.headers.get('content-type') || 'text/vtt';
+                reply.raw.writeHead(subRes.status, {
+                    'Content-Type': contentType,
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'public, max-age=14400'
+                });
+                const arrayBuf = await subRes.arrayBuffer();
+                reply.raw.end(Buffer.from(arrayBuf));
+            } catch {
+                reply.raw.writeHead(500);
+                reply.raw.end('Subtitle fetch failed');
+            }
+            return;
         } else if (
             request.url.startsWith('/v1/') &&
             !request.url.startsWith('/v1/movies') &&

@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { Check, Settings, Captions, Volume2, HardDrive, Gauge, Clapperboard } from "lucide-react"
+import { Check, Settings, Captions, Volume2, HardDrive, Gauge, Clapperboard, RefreshCw } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -179,6 +179,20 @@ export function PlayerSettings({ ref, playbackRate, onPlaybackRateChange, qualit
                                     </div>
                                 </div>
                             ))}
+
+                            <div className="mt-4 pt-2 border-t border-zinc-800">
+                                <button
+                                    onClick={async () => {
+                                        const omssUrl = localStorage.getItem("omss_url") || "http://localhost:3000"
+                                        await fetch(`${omssUrl}/v1/cache/clear`).catch(() => {})
+                                        window.location.reload()
+                                    }}
+                                    className="flex w-full items-center justify-center gap-2 rounded-md bg-zinc-800/80 px-3 py-2 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white"
+                                >
+                                    <RefreshCw className="h-3.5 w-3.5" />
+                                    Clear Cache & Re-fetch Sources
+                                </button>
+                            </div>
                         </TabsContent>
 
                         <TabsContent value="subtitles" className="m-0 p-2">
