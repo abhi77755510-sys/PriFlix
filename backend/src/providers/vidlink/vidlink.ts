@@ -219,7 +219,7 @@ export class VidLinkProvider extends BaseProvider {
                     const codecLabel = qData.codecName ? ` (${qData.codecName.toUpperCase()})` : '';
 
                     sources.push({
-                        url: this.createProxyUrl(qData.url, {}),
+                        url: qData.url,
                         quality: `${formattedQuality}${codecLabel}`,
                         type: 'mp4',
                         audioTracks: [
