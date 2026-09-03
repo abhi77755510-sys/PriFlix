@@ -10,6 +10,8 @@ build
 .next
 tsconfig.tsbuildinfo
 tsconfig.*.tsbuildinfo
+.wrangler
+.dev.vars
 scratch/
 scratch_*.mjs
 scratch_*.ts

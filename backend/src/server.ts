@@ -358,6 +358,7 @@ async function handleSegmentFetch(segName: string, rangeHeader: string | undefin
 }
 
 async function main() {
+    const configuredPublicUrl = process.env.VITE_OMSS_API_URL?.replace(/\/+$/, '');
     const server = new OMSSServer({
         name: 'CinePro',
         version: '1.0.0',
@@ -365,7 +366,7 @@ async function main() {
         // Network
         host: process.env.HOST ?? (process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost'),
         port: Number(process.env.PORT ?? 3000),
-        publicUrl: process.env.VITE_OMSS_API_URL ?? (process.env.NODE_ENV === 'production' || process.env.RENDER ? 'https://pri-flix-backend.onrender.com' : undefined),
+        publicUrl: configuredPublicUrl ?? (process.env.NODE_ENV === 'production' || process.env.RENDER ? 'https://pri-flix-backend.onrender.com' : undefined),
 
         // Cache (memory for dev, Redis for prod)
         cache: {
@@ -660,7 +661,7 @@ async function main() {
     await server.start();
 
     const publicUrl =
-        process.env.VITE_OMSS_API_URL ??
+        configuredPublicUrl ??
         `http://${process.env.HOST ?? 'localhost'}:${process.env.PORT ?? 3000}`;
 
     const uiUrl = `https://ui.cinepro.cc/?omssurl=${encodeURIComponent(publicUrl)}`;
