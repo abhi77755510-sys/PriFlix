@@ -439,16 +439,16 @@ async function main() {
 
                     const isM3u8 = targetUrl.includes('.m3u8') || targetUrl.includes('playlist') || targetUrl.includes('getm3u8');
 
-                    if (Object.keys(headers).length === 0 && !isM3u8) {
-                        const isVidLinkMp4 = targetUrl.includes('hakunaymatata.com') || targetUrl.includes('vidlink');
-                        if (!isVidLinkMp4) {
-                            reply.raw.writeHead(302, {
-                                Location: targetUrl,
-                                'Access-Control-Allow-Origin': '*'
-                            });
-                            reply.raw.end();
-                            return;
-                        }
+                    // 302 Redirect all non-m3u8 video streams/segments across all providers (movies, TV series, regional streams) to offload 99% server bandwidth
+                    if (!isM3u8) {
+                        reply.raw.writeHead(302, {
+                            Location: targetUrl,
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                            'Access-Control-Allow-Headers': '*'
+                        });
+                        reply.raw.end();
+                        return;
                     }
 
                     if (isM3u8) {
