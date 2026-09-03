@@ -10,7 +10,7 @@ type OmssContextType = {
 const OmssContext = createContext<OmssContextType | null>(null)
 
 export function OmssProvider({ children }: { children: React.ReactNode }) {
-    const baseUrl = import.meta.env.VITE_OMSS_API_URL || import.meta.env.VITE_OMSS_URL || "https://priflix-backend.onrender.com"
+    const baseUrl = import.meta.env.VITE_OMSS_API_URL || import.meta.env.VITE_OMSS_URL || ""
     const [valid, setValid] = useState(true)
 
     const client = useMemo(() => {

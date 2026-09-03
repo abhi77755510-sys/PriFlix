@@ -183,7 +183,7 @@ export function PlayerSettings({ ref, playbackRate, onPlaybackRateChange, qualit
                             <div className="mt-4 pt-2 border-t border-zinc-800">
                                 <button
                                     onClick={async () => {
-                                        const omssUrl = "https://priflix-backend.onrender.com"
+                                        const omssUrl = import.meta.env.VITE_OMSS_API_URL || import.meta.env.VITE_OMSS_URL || ""
                                         await fetch(`${omssUrl}/v1/cache/clear`).catch(() => {})
                                         window.location.reload()
                                     }}

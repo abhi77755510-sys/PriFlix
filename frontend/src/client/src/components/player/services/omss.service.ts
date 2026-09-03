@@ -1,8 +1,10 @@
 import { OmssClient } from "@omss/sdk"
 
+const getEnvBaseUrl = () => import.meta.env.VITE_OMSS_API_URL || import.meta.env.VITE_OMSS_URL || ""
+
 export const omssService = {
     getMovieSources: async (client: OmssClient, id: string, server?: string | null) => {
-        const baseUrl = client?.getBaseUrl?.() || "https://priflix-backend.onrender.com"
+        const baseUrl = client?.getBaseUrl?.() || getEnvBaseUrl()
         let url = `${baseUrl}/v1/movies/${encodeURIComponent(id)}`
         if (server && server !== "auto" && server !== "all") {
             url += `?provider=${encodeURIComponent(server)}`
@@ -16,7 +18,7 @@ export const omssService = {
     },
 
     getTvSources: async (client: OmssClient, id: string, season: number, episode: number, server?: string | null) => {
-        const baseUrl = client?.getBaseUrl?.() || "https://priflix-backend.onrender.com"
+        const baseUrl = client?.getBaseUrl?.() || getEnvBaseUrl()
         let url = `${baseUrl}/v1/tv/${encodeURIComponent(id)}/seasons/${season}/episodes/${episode}`
         if (server && server !== "auto" && server !== "all") {
             url += `?provider=${encodeURIComponent(server)}`
