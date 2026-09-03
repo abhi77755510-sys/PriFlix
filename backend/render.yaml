@@ -18,6 +18,8 @@ services:
             value: 'true'
           - key: CORS_ORIGIN
             value: '*'
+          - key: VITE_OMSS_API_URL
+            value: 'https://pri-flix-backend.onrender.com'
           - key: MCP_ENABLED
             value: 'true'
           - key: TMDB_API_KEY
